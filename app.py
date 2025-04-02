@@ -11,7 +11,8 @@ socketio = SocketIO(app, async_mode='eventlet')
 yhteys = sqlite3.connect('mittaukset.db3')
 kursori = yhteys.cursor()
 kursori.execute("CREATE TABLE IF NOT EXISTS mittaukset (id INTEGER PRIMARY KEY, paiva TEXT, mittaus INTEGER)")
-
+yhteys.commit()
+yhteys.close()
 
 mittaukset = dict() # {'maanantai' : 7}
 
