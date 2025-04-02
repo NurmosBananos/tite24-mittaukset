@@ -1,11 +1,19 @@
 import os
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO
+import sqlite3 #tietokantakirjasto
+import eventlet
 
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode='eventlet')
 
-mittaukset = dict()
+#tietokannan teko
+yhteys = sqlite3.connect('mittaukset.db3')
+kursori = yhteys.cursor()
+kursori.execute("CREATE TABLE IF NOT EXISTS mittaukset (id INTEGER PRIMARY KEY, paiva TEXT, mittaus INTEGER)")
+
+
+mittaukset = dict() # {'maanantai' : 7}
 
 @app.route('/', methods=['GET'])
 def index():
