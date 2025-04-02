@@ -3,7 +3,7 @@ from flask import Flask, render_template, request
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='eventlet')
 
 mittaukset = dict()
 
@@ -21,4 +21,4 @@ def lisaa_tieto():
     return "400 Bad Request", 400
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host="0.0.0.0")
+    socketio.run(app, debug=True)
