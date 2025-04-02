@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mittaustiedot</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 5px;
+        }
+        th {
+            text-align: left;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+</head>
+<body style="font-family:Verdana, Geneva, Tahoma, sans-serif;">
+    <div class="app">
+        <h1>Mittaukset</h1>
+        <table style="width: 100%;">
+            <tr>
+                <th>Päivä</th>
+                <th>Mittaus</th>
+            </tr>
+            {% if taulukko %}
+                {% for avain, arvo in taulukko.items() %}
+                <tr>
+                    <td>{{ avain }}</td>
+                    <td>{{ arvo }}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="2">Ei mittauksia saatavilla</td>
+                </tr>
+            {% endif %}
+        </table>
+    </div>  
+</body>
+<script type="text/javascript">
+    var socket = io.connect('https://tite24-mittaukset-jk.azurewebsites.net/');
+    socket.on('data_update', function() {
+        window.location.reload();
+    });
+</script>
+</html>
