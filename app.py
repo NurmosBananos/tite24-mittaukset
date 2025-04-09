@@ -18,7 +18,7 @@ mittaukset = dict() # {'maanantai' : 7}
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', taulukko=mittaukset)
+    return render_template('charts.html', taulukko=mittaukset)
 
 @app.route('/lisaa_tieto', methods=['POST'])
 def lisaa_tieto():
