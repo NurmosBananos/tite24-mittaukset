@@ -1,19 +1,21 @@
-# Tämä koodi toimii nyt. 
+import gevent.monkey
+gevent.monkey.patch_all()  # TÄRKEÄÄ: tämä tulee ennen mitään muita importteja
 
 import os
 import traceback
-from flask import Flask, render_template, request, jsonify
-from flask_socketio import SocketIO
 import sqlite3
 
-app = Flask(__name__)
-socketio = SocketIO(app, async_mode='eventlet')
+from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO
 
-# Tietokannan alustus
+app = Flask(__name__)
+socketio = SocketIO(app, async_mode='gevent')  # Käytetään gevent-ajuria
+
+# --- Tietokannan alustus ---
 def init_db():
-    yhteys = sqlite3.connect("mittaukset.db3")
-    kursori = yhteys.cursor()
-    kursori.execute("""
+    conn = sqlite3.connect("mittaukset.db3")
+    cursor = conn.cursor()
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS mittaukset (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             aika TEXT,
@@ -23,17 +25,17 @@ def init_db():
             kosteus_ulko INTEGER
         )
     """)
-    yhteys.commit()
-    yhteys.close()
+    conn.commit()
+    conn.close()
 
 init_db()
 
 @app.route('/')
 def index():
-    yhteys = sqlite3.connect("mittaukset.db3")
-    yhteys.row_factory = sqlite3.Row
-    kursori = yhteys.cursor()
-    kursori.execute("""
+    conn = sqlite3.connect("mittaukset.db3")
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("""
         SELECT aika, lampo_sisa, lampo_ulko, kosteus_sisa, kosteus_ulko
         FROM (
             SELECT * FROM mittaukset
@@ -41,32 +43,35 @@ def index():
             LIMIT 100
         ) ORDER BY id ASC
     """)
-    tiedot = kursori.fetchall()
-    yhteys.close()
-
-    return render_template("chart.html", taulukko=tiedot)
+    data = cursor.fetchall()
+    conn.close()
+    return render_template("chart.html", taulukko=data)
 
 @app.route('/lisaa_tieto', methods=['POST'])
 def lisaa_tieto():
     try:
         data = request.get_json(force=True)
+        print("POST /lisaa_tieto vastaanotettu data:", data)  # Tulostetaan vastaanotettu data
 
+        # Odotamme seuraavia kenttiä: "aika", "lampo_sisa", "lampo_ulko", "kosteus_sisa", "kosteus_ulko"
         aika = data['aika']
         lampo_sisa = data['lampo_sisa']
         lampo_ulko = data['lampo_ulko']
         kosteus_sisa = data['kosteus_sisa']
         kosteus_ulko = data['kosteus_ulko']
 
-        yhteys = sqlite3.connect("mittaukset.db3")
-        kursori = yhteys.cursor()
-        kursori.execute("""
+        conn = sqlite3.connect("mittaukset.db3")
+        cursor = conn.cursor()
+        cursor.execute("""
             INSERT INTO mittaukset (aika, lampo_sisa, lampo_ulko, kosteus_sisa, kosteus_ulko)
             VALUES (?, ?, ?, ?, ?)
         """, (aika, lampo_sisa, lampo_ulko, kosteus_sisa, kosteus_ulko))
-        yhteys.commit()
-        yhteys.close()
+        conn.commit()
+        conn.close()
 
         print(f"Lisättiin: {aika} | Sisä: {lampo_sisa}°C / {kosteus_sisa}% | Ulko: {lampo_ulko}°C / {kosteus_ulko}%")
+        print("SocketIO: 'data_update' -eventti lähetetään")  # Ilmoitetaan eventin lähetyksestä
+
         socketio.emit('data_update')
         return jsonify({"status": "ok"}), 200
 
@@ -76,5 +81,5 @@ def lisaa_tieto():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Paikallista kehitystä varten
-    socketio.run(app, debug=True)
+    print("Käynnistetään palvelin osoitteessa http://127.0.0.1:5000 ...")
+    socketio.run(app, debug=True, host='127.0.0.1', port=5000, use_reloader=False)

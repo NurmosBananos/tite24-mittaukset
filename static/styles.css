@@ -1,37 +1,20 @@
 body {
-    font-family: Verdana, sans-serif;
-    margin: 2rem;
-    background-color: #f9f9f9;
-    color: #333;
+    font-family: Arial, sans-serif;
+    margin: 20px;
 }
 
 h1, h2 {
-    color: #2c3e50;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
+    color: #333;
 }
 
 table, th, td {
-    border: 1px solid #ccc;
+    border: 1px solid #999;
+    border-collapse: collapse;
+    padding: 8px;
+    text-align: center;
 }
 
-th, td {
-    padding: 10px;
-    text-align: left;
-}
-
-th {
-    background-color: #eaeaea;
-}
-
-tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
-#chart_div {
-    margin-bottom: 40px;
+table {
+    margin-top: 20px;
+    width: 100%;
 }

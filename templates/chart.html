@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Mittauskaavio ja -taulukko</title>
-
-    <!-- Google Charts -->
+    <!-- Ladataan Google Chartsin kirjasto -->
     <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <!-- Ladataan Socket.IO:n client-kirjasto -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
-
-    <!-- Tyylit -->
+    <!-- Tiedostoon sidottu CSS tyylitiedosto -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <h1>Mittaukset</h1>
-
-    <!-- Kaavio -->
+    
+    <!-- Div-alue kaaviolle -->
     <div id="chart_div" style="width: 100%; height: 500px;"></div>
 
-    <!-- Taulukko -->
     <h2>Mittaukset taulukkona</h2>
     <table>
         <thead>
@@ -43,22 +42,27 @@
     </table>
 
     <script>
+        // Yhdistetään samaan domainiin SocketIO:n avulla.
         const socket = io.connect();
         socket.on('data_update', function () {
+            // Kun palvelin lähettää 'data_update'-eventin, sivu ladataan uudelleen.
             window.location.reload();
         });
 
+        // Ladataan Google Chartsin corechart-paketti ja asetetaan piirtofunktio.
         google.charts.load('current', { packages: ['corechart'] });
         google.charts.setOnLoadCallback(drawChart);
 
         function drawChart() {
             const data = new google.visualization.DataTable();
+            // Määritellään sarakkeet: aika on merkkijono, muut numeerisia arvoja.
             data.addColumn('string', 'Aika');
             data.addColumn('number', 'Sisälämpötila');
             data.addColumn('number', 'Ulkolämpötila');
             data.addColumn('number', 'Sisäkosteus');
             data.addColumn('number', 'Ulkokosteus');
 
+            // Lisätään rivejä Jinja2-silmukalla.
             data.addRows([
                 {% for mittaus in taulukko %}
                     {% if mittaus.aika and mittaus.lampo_sisa is not none and mittaus.lampo_ulko is not none and mittaus.kosteus_sisa is not none and mittaus.kosteus_ulko is not none %}
@@ -73,12 +77,17 @@
                 hAxis: { title: 'Aika' },
                 vAxis: { title: 'Arvo' },
                 seriesType: 'line',
+                // Määritellään sekoitus eri kaaviotyyppien välillä: ensimmäiset kaksi saraketta piirretään viivana,
+                // viimeiset kaksi pylväinä.
                 series: {
-                    2: { type: 'bars' }, // Sisäkosteus
-                    3: { type: 'bars' }  // Ulkokosteus
+                    0: { pointShape: 'circle', pointSize: 6 },
+                    1: { pointShape: 'circle', pointSize: 6 },
+                    2: { type: 'bars' },
+                    3: { type: 'bars' }
                 }
             };
 
+            // Piirretään yhdistelmäkaavio div-elementtiin chart_div.
             const chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
             chart.draw(data, options);
         }
