@@ -11,7 +11,7 @@ from flask_socketio import SocketIO
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode='gevent')  # Käytetään gevent-ajuria
 
-# --- Tietokannan alustus ---
+# --- Tietokannan alustus --
 def init_db():
     conn = sqlite3.connect("mittaukset.db3")
     cursor = conn.cursor()
