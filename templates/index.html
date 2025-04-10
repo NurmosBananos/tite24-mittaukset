@@ -1,48 +1,84 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="fi">
 <head>
-    <title>Mittaustiedot</title>
-    <style>
-        table, th, td {
-            border: 1px solid black;
-            border-collapse: collapse;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mittausarvot - Kaavio ja Taulukko</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script type="text/javascript">
+        // Ladataan Google Charts
+        google.charts.load('current', {'packages':['corechart', 'line']});
+        google.charts.setOnLoadCallback(drawChart);
+
+        const socket = io.connect('https://tite24-mittaukset-jk.azurewebsites.net');
+
+        socket.on('data_update', function(newData) {
+            updateChart(newData);
+        });
+
+        let chart;
+        let chartData;
+        let options = {
+            title: 'Mittausarvot',
+            curveType: 'function',
+            legend: { position: 'bottom' },
+            hAxis: { title: 'Aika', format: 'HH:mm:ss' },
+            vAxis: { title: 'Arvo' }
+        };
+
+        function drawChart() {
+            chartData = new google.visualization.DataTable();
+            chartData.addColumn('string', 'Aika');
+            chartData.addColumn('number', 'Lämpötila');
+            chartData.addColumn('number', 'Kosteus');
+
+            chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+            chart.draw(chartData, options);
         }
-        th, td {
-            padding: 5px;
+
+        function updateChart(newData) {
+            chartData.addRow([newData.timestamp, newData.temperature, newData.humidity]);
+            chart.draw(chartData, options);
         }
-        th {
-            text-align: left;
-        }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    </script>
+
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="styles.css">
+
 </head>
-<body style="font-family:Verdana, Geneva, Tahoma, sans-serif;">
-    <div class="app">
-        <h1>Mittaukset</h1>
-        <table style="width: 100%;">
-            <tr>
-                <th>Päivä</th>
-                <th>Mittaus</th>
-            </tr>
-            {% if taulukko %}
-                {% for avain, arvo in taulukko.items() %}
-                <tr>
-                    <td>{{ avain }}</td>
-                    <td>{{ arvo }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="2">Ei mittauksia saatavilla</td>
-                </tr>
-            {% endif %}
-        </table>
-    </div>  
+<body>
+
+    <div class="container">
+        <h1>Mittausarvot - Kaavio ja Taulukko</h1>
+
+        <!-- Kaavio -->
+        <div id="curve_chart"></div>
+
+        <!-- Taulukko -->
+        <div id="data-table">
+            <h2>Mittaukset</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aika</th>
+                        <th>Lämpötila (°C)</th>
+                        <th>Kosteus (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data rows are inserted here dynamically -->
+                    {% for aika, mittaus in taulukko.items() %}
+                        <tr>
+                            <td>{{ aika }}</td>
+                            <td>{{ mittaus['lampotila'] }}</td>
+                            <td>{{ mittaus['kosteus'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </body>
-<script type="text/javascript">
-    var socket = io.connect('https://tite24-mittaukset-jk.azurewebsites.net/');
-    socket.on('data_update', function() {
-        window.location.reload();
-    });
-</script>
 </html>

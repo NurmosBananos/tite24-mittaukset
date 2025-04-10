@@ -1,50 +1,85 @@
 <!doctype html>
-<html>
+<html lang="fi">
 <head>
-    <title>Mittauskaavio</title>
+    <meta charset="UTF-8">
+    <title>Mittauskaavio ja -taulukko</title>
 
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-
+    <!-- Google Charts -->
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
 
-    <style>
-        body {
-            font-family: Verdana, Geneva, Tahoma, sans-serif;
-        }
-    </style>
+    <!-- Tyylit -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Mittausarvot - Kaavio</h1>
+    <h1>Mittaukset</h1>
 
-    <!-- Chart container -->
+    <!-- Kaavio -->
     <div id="chart_div" style="width: 100%; height: 500px;"></div>
 
-    <script type="text/javascript">
-        // Reload page on new data from server
-        var socket = io.connect('https://tite24-mittaukset-jk.azurewebsites.net');
+    <!-- Taulukko -->
+    <h2>Mittaukset taulukkona</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Aika</th>
+                <th>Sisälämpötila (°C)</th>
+                <th>Ulkolämpötila (°C)</th>
+                <th>Sisäkosteus (%)</th>
+                <th>Ulkokosteus (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mittaus in taulukko %}
+            <tr>
+                <td>{{ mittaus.aika }}</td>
+                <td>{{ mittaus.lampo_sisa }}</td>
+                <td>{{ mittaus.lampo_ulko }}</td>
+                <td>{{ mittaus.kosteus_sisa }}</td>
+                <td>{{ mittaus.kosteus_ulko }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        const socket = io.connect();
         socket.on('data_update', function () {
             window.location.reload();
         });
 
-        // Load Google Charts
         google.charts.load('current', { packages: ['corechart'] });
         google.charts.setOnLoadCallback(drawChart);
 
         function drawChart() {
-            var data = google.visualization.arrayToDataTable([
-                ['Päivä', 'Mittaus'],
-                {% for avain, arvo in taulukko.items() %}
-                    ['{{ avain }}', {{ arvo }}],
+            const data = new google.visualization.DataTable();
+            data.addColumn('string', 'Aika');
+            data.addColumn('number', 'Sisälämpötila');
+            data.addColumn('number', 'Ulkolämpötila');
+            data.addColumn('number', 'Sisäkosteus');
+            data.addColumn('number', 'Ulkokosteus');
+
+            data.addRows([
+                {% for mittaus in taulukko %}
+                    {% if mittaus.aika and mittaus.lampo_sisa is not none and mittaus.lampo_ulko is not none and mittaus.kosteus_sisa is not none and mittaus.kosteus_ulko is not none %}
+                        ['{{ mittaus.aika }}', {{ mittaus.lampo_sisa }}, {{ mittaus.lampo_ulko }}, {{ mittaus.kosteus_sisa }}, {{ mittaus.kosteus_ulko }}]{% if not loop.last %},{% endif %}
+                    {% endif %}
                 {% endfor %}
             ]);
 
-            var options = {
-                title: 'Mittausarvot päivän mukaan',
-                curveType: 'function',
-                legend: { position: 'bottom' }
+            const options = {
+                title: 'Lämpötila ja kosteus ajan mukaan',
+                legend: { position: 'bottom' },
+                hAxis: { title: 'Aika' },
+                vAxis: { title: 'Arvo' },
+                seriesType: 'line',
+                series: {
+                    2: { type: 'bars' }, // Sisäkosteus
+                    3: { type: 'bars' }  // Ulkokosteus
+                }
             };
 
-            var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+            const chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
             chart.draw(data, options);
         }
     </script>

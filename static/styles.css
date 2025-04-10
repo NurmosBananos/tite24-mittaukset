@@ -1,0 +1,37 @@
+body {
+    font-family: Verdana, sans-serif;
+    margin: 2rem;
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+h1, h2 {
+    color: #2c3e50;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table, th, td {
+    border: 1px solid #ccc;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #eaeaea;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+#chart_div {
+    margin-bottom: 40px;
+}
