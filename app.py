@@ -39,10 +39,11 @@ def index():
         SELECT aika, lampo_sisa, lampo_ulko, kosteus_sisa, kosteus_ulko
         FROM (
             SELECT * FROM mittaukset
-            ORDER BY id DESC
+            ORDER BY id ASC
             LIMIT 100
-        ) ORDER BY id ASC
+        ) ORDER BY id DESC
     """)
+    
     data = cursor.fetchall()
     conn.close()
     return render_template("chart.html", taulukko=data)
@@ -67,18 +68,29 @@ def lisaa_tieto():
             VALUES (?, ?, ?, ?, ?)
         """, (aika, lampo_sisa, lampo_ulko, kosteus_sisa, kosteus_ulko))
         conn.commit()
+                # Poista vanhat rivit (säilytetään vain uusimmat 100)
+        cursor.execute("""
+            DELETE FROM mittaukset
+            WHERE id NOT IN (
+                SELECT id FROM mittaukset
+                ORDER BY id DESC
+                LIMIT 100
+            )
+        """)
+        conn.commit()
+
         conn.close()
 
         print(f"Lisättiin: {aika} | Sisä: {lampo_sisa}°C / {kosteus_sisa}% | Ulko: {lampo_ulko}°C / {kosteus_ulko}%")
-        print("SocketIO: 'data_update' -eventti lähetetään")  # Ilmoitetaan eventin lähetyksestä
+        print("SocketIO: Event lähetetään")  # Ilmoitetaan eventin lähetyksestä
 
         socketio.emit('data_update')
-        return jsonify({"status": "ok"}), 200
+        return jsonify({"STATUS": "OK"}), 200
 
     except Exception as e:
         print("Virhe /lisaa_tieto-reitillä:")
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"ERROR": str(e)}), 500
 
 if __name__ == '__main__':
     print("Käynnistetään palvelin osoitteessa http://127.0.0.1:5000 ...")
